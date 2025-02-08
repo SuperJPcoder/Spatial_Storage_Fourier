@@ -80,6 +80,6 @@ git push origin feature-name
 ## ⚡ Open for Expansion!
 
 This project is open-source and ready for further improvements!
-
+Check out [Work to be done](https://github.com/SuperJPcoder/Spatial_Storage_Fourier/issues) - Do sort them as "Oldest First".
 Feel free to contribute and push this project further! 🚀🎨
 
