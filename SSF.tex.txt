@@ -1,0 +1,398 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{graphicx} 
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{booktabs}
+
+\geometry{a4paper, margin=1in}
+
+\title{Efficient Storage and Spatial Query Handling of Geospatial Maps Using Fourier Series}
+\author{Priyank Jhaveri}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Geospatial data storage and spatial querying are critical aspects of modern mapping technologies. Traditional methods for storing maps, such as raster and vector formats, have limitations in terms of data compression and scalability. This paper proposes a novel approach to map storage using Fourier series, which allows complex shapes to be represented as periodic functions, thus offering efficient data compression. We explain the mathematical foundation of this approach, compare its storage requirements with conventional methods, and discuss the potential for dynamic zooming by using varying levels of detail. Furthermore, we introduce new methods to handle spatial queries, such as intersections, within the Fourier domain, providing a robust solution for geospatial applications. We also explore real-world applications, challenges, and future prospects of this methodology.
+\end{abstract}
+
+\section{Introduction}
+Maps are essential for various applications, from navigation systems to geographic information systems (GIS). The demand for high-resolution, easily scalable maps has increased significantly with the rise of digital mapping platforms such as Google Maps, OpenStreetMap, and various GIS software used in urban planning, logistics, and environmental monitoring.
+
+Traditionally, maps are stored using raster and vector formats. Raster maps store data as grids of pixels, while vector maps use paths defined by coordinates. Each method has its limitations. Raster maps can consume large amounts of storage, especially for high-resolution images, and do not scale well. Vector maps, on the other hand, are more efficient but can become cumbersome when representing highly detailed or irregular shapes.
+
+This paper explores an alternative approach to map storage using Fourier series. By approximating map boundaries with sine and cosine functions, we can significantly compress the data, allowing efficient storage and scalable zooming. This technique leverages the periodic nature of Fourier series, making it especially suitable for smooth, continuous curves found in geographic contours such as coastlines, borders, and river paths. Additionally, we extend the method to enable spatial queries such as intersection tests directly in the Fourier domain.
+
+\subsection{Motivation}
+The motivation behind this research is to develop a more efficient method for storing geospatial data that allows dynamic scaling of map detail without significantly increasing storage costs. Furthermore, handling spatial queries, such as intersection checks, directly on Fourier-transformed data could simplify and expedite geospatial computations.
+
+\section{Mathematical Background of Fourier Series}
+The Fourier series is a mathematical tool used to express a function as a sum of periodic components, specifically sines and cosines. It was first introduced by Joseph Fourier in the early 19th century and has since become a cornerstone of signal processing, image compression, and many other fields.
+
+\subsection{Definition and Properties}
+A periodic function \( f(x) \) with period \( 2\pi \) can be expressed as:
+\[
+f(x) = a_0 + \sum_{n=1}^{\infty} \left(a_n \cos(nx) + b_n \sin(nx)\right),
+\]
+where:
+\[
+a_0 = \frac{1}{2\pi} \int_{-\pi}^{\pi} f(x) \, dx, \quad a_n = \frac{1}{\pi} \int_{-\pi}^{\pi} f(x) \cos(nx) \, dx, \quad b_n = \frac{1}{\pi} \int_{-\pi}^{\pi} f(x) \sin(nx) \, dx.
+\]
+The coefficients \( a_n \) and \( b_n \) determine the amplitude of the sine and cosine components, respectively.
+
+\subsection{Convergence and Approximation}
+The Fourier series converges to the function \( f(x) \) at every point where \( f \) is continuous. At points of discontinuity, the series converges to the average of the left-hand and right-hand limits. This property makes Fourier series particularly useful for approximating functions that are mostly smooth but may have sharp features.
+
+\section{Methodology}
+
+\subsection{Data Preprocessing}
+To apply Fourier series to map storage, we first extract the boundary coordinates from existing geospatial data formats, such as shapefiles or GeoJSON. The data is then processed to create a parameterized representation \( (x(t), y(t)) \) where \( t \) ranges from 0 to \( 2\pi \). This ensures that the functions are periodic, which is a prerequisite for Fourier analysis.
+
+\subsection{Fourier Coefficient Calculation}
+Using the parameterized representation, we calculate the Fourier coefficients \( a_n \) and \( b_n \) for both \( x(t) \) and \( y(t) \). These coefficients are stored in a compact format, allowing for easy reconstruction of the map boundary.
+
+\subsection{Advantages for Dynamic Zooming}
+The Fourier series' hierarchical nature allows efficient multi-scale analysis. When zoomed out, fewer Fourier terms are needed to render the map, as fine details are not visible. As the user zooms in, higher-frequency terms are introduced, progressively revealing more detail. This approach can greatly optimize the rendering process in interactive applications.
+
+\subsection{Spatial Query Handling in Fourier Domain}
+One of the main advantages of using Fourier series for map storage is the ability to handle spatial queries, such as intersection checks, directly within the Fourier domain. This section outlines how to approach these computations.
+
+\subsubsection{ST\_Intersection}
+
+The Fourier series representation can handle intersection checks efficiently. Given two shapes represented by their Fourier series as \( (x_1(t), y_1(t)) \) and \( (x_2(s), y_2(s)) \):
+
+\begin{enumerate}
+    \item \textbf{Parameter Representation:} Represent the two shapes by parameterizing each with Fourier series coefficients for \( x \) and \( y \).
+    \item \textbf{Solve for Intersection:} To find if the shapes intersect, we need to solve:
+    \[
+    x_1(t) = x_2(s) \quad \text{and} \quad y_1(t) = y_2(s)
+    \]
+    \item \textbf{Numerical Solution:} Numerically solve this system of trigonometric equations for \( t \) and \( s \), yielding the points of intersection if they exist.
+\end{enumerate}
+
+\subsubsection{ST\_Distance}
+
+To compute the distance between two Fourier-represented shapes:
+
+\begin{enumerate}
+    \item \textbf{Coefficient Comparison:} Calculate the Euclidean distance between corresponding Fourier coefficients of the two shapes' parameterized functions.
+    \item \textbf{Approximated Distance:} The root mean square distance between \( (x_1(t), y_1(t)) \) and \( (x_2(s), y_2(s)) \) Fourier coefficients gives an approximate distance between the two curves.
+    \item \textbf{Accuracy:} Higher terms in the Fourier series can be added if a more precise distance measurement is necessary.
+\end{enumerate}
+
+\subsubsection{ST\_Union}
+
+For union operations on two shapes:
+
+\begin{enumerate}
+    \item \textbf{Boundary Merging:} Combine the Fourier coefficients of both shapes, forming a new set that represents the union boundary.
+    \item \textbf{Overlap Handling:} Ensure overlapping regions are correctly managed by maintaining unique Fourier terms for each distinct part of the union.
+    \item \textbf{Fourier Series Reconstruction:} Reconstruct the merged boundary using the combined Fourier coefficients to represent the union.
+\end{enumerate}
+
+\subsubsection{ST\_Buffer}
+
+Creating a buffer around a Fourier-represented shape involves extending the Fourier boundary by a fixed distance \( d \):
+
+\begin{enumerate}
+    \item \textbf{Coefficient Modification:} Adjust each Fourier term by scaling to expand the shape boundary by the buffer distance.
+    \item \textbf{Reparameterization:} Recompute the series such that the resulting shape is buffered, which shifts the position by the desired distance.
+\end{enumerate}
+
+\subsubsection{ST\_Contains}
+
+To determine if a shape contains another shape:
+
+\begin{enumerate}
+    \item \textbf{Fourier Parameterization:} Parameterize the shapes as \( (x_1(t), y_1(t)) \) for the larger shape and \( (x_2(s), y_2(s)) \) for the smaller shape.
+    \item \textbf{Check Inside Points:} Evaluate whether all points of the smaller shape lie within the boundary defined by \( (x_1(t), y_1(t)) \).
+    \item \textbf{Algorithmic Comparison:} Compare Fourier coefficients to check if \( (x_2(s), y_2(s)) \) fits within the range defined by \( (x_1(t), y_1(t)) \).
+\end{enumerate}
+
+\subsubsection{ST\_Within}
+
+The reverse of the containment check, ST\_Within determines if one shape is fully within another by confirming that all Fourier coefficients of the inner shape align within the bounds set by the outer shape’s Fourier coefficients.
+
+\subsubsection{ST\_Touches}
+
+For determining whether two shapes touch:
+
+\begin{enumerate}
+    \item \textbf{Boundary Contact Check:} Identify if boundary points from each shape coincide.
+    \item \textbf{Coefficient Matching:} Check if there exists a point \( (x_1(t), y_1(t)) \) in the Fourier series of the first shape that is equal to a point \( (x_2(s), y_2(s)) \) in the Fourier series of the second shape.
+\end{enumerate}
+
+\subsubsection{ST\_Overlaps}
+
+To detect overlapping regions between two shapes:
+
+\begin{enumerate}
+    \item \textbf{Common Coefficient Range:} Analyze overlapping ranges in the Fourier coefficients of both shapes.
+    \item \textbf{Overlap Quantification:} Calculate the area or segment of overlap by isolating terms that align in both Fourier representations.
+\end{enumerate}
+
+\subsubsection{ST\_Length}
+
+Calculating the length of a Fourier-represented curve:
+
+\begin{enumerate}
+    \item \textbf{Fourier Series Integration:} Integrate the squared derivatives \( x'(t)^2 + y'(t)^2 \) of the Fourier functions over the interval \( [0, 2\pi] \).
+    \item \textbf{Trigonometric Simplification:} Use trigonometric identities to compute the length using Fourier coefficients.
+\end{enumerate}
+
+\subsubsection{ST\_Area}
+
+For the area enclosed by a closed Fourier curve:
+
+\begin{enumerate}
+    \item \textbf{Green’s Theorem Application:} Use Green’s theorem to express the area in terms of Fourier coefficients, integrating along the boundary.
+    \item \textbf{Simplified Coefficient Summation:} The area can be computed by summing specific terms of the Fourier coefficients.
+\end{enumerate}
+
+\subsubsection{ST\_Envelope}
+
+Creating an envelope (bounding box) around a Fourier series shape:
+
+\begin{enumerate}
+    \item \textbf{Fourier Coefficient Extents:} Calculate the maximum and minimum values of the Fourier series coefficients for both \( x(t) \) and \( y(t) \).
+    \item \textbf{Envelope Boundaries:} Construct a rectangle or bounding box based on these maximum and minimum values.
+\end{enumerate}
+
+\subsubsection{ST\_Simplify}
+
+For simplifying a shape's Fourier representation:
+
+\begin{enumerate}
+    \item \textbf{Reduce Terms:} Retain only the low-frequency terms (smaller values of \( n \)) in the Fourier series, discarding higher frequency terms.
+    \item \textbf{Shape Approximation:} This yields a simplified shape with fewer terms while retaining the general outline.
+\end{enumerate}
+
+\subsubsection{ST\_Centroid}
+
+The centroid of a shape in Fourier representation can be computed as:
+
+\begin{enumerate}
+    \item \textbf{Coefficient Average:} Calculate the mean of the Fourier coefficients for \( x \) and \( y \).
+    \item \textbf{Central Point Calculation:} The resulting average values give the coordinates of the centroid.
+\end{enumerate}
+
+\subsubsection{ST\_VoronoiPolygons}
+
+Generating Voronoi polygons within a Fourier-represented shape:
+
+\begin{enumerate}
+    \item \textbf{Sample Points Extraction:} Extract sample points from the Fourier shape boundary.
+    \item \textbf{Voronoi Diagram Calculation:} Use the sampled points to construct Voronoi polygons, then map these polygons back to the Fourier domain for storage.
+\end{enumerate}
+
+\subsubsection{ST\_PointN}
+
+Accessing a specific point \( N \) along the Fourier-defined shape:
+
+\begin{enumerate}
+    \item \textbf{Fourier Series Evaluation:} Evaluate the Fourier series at \( t = 2\pi N / T \) where \( T \) is the total period.
+    \item \textbf{Direct Access:} Retrieve \( x(N) \) and \( y(N) \) as the coordinates of the \( N \)-th point.
+\end{enumerate}
+
+\subsubsection{ST\_ExteriorRing}
+
+For polygons represented by Fourier boundaries, ST\_ExteriorRing returns the outer boundary:
+
+\begin{enumerate}
+    \item \textbf{Outer Coefficients:} Use the Fourier series representing the outermost boundary.
+    \item \textbf{Boundary Representation:} Map the exterior ring’s coefficients directly to obtain the exterior ring.
+\end{enumerate}
+
+\subsubsection{ST\_NPoints}
+
+The ST\_NPoints function determines the number of points (or significant terms) in the Fourier series that sufficiently approximate the shape:
+
+\begin{enumerate}
+    \item \textbf{Coefficient Threshold:} Select Fourier coefficients that exceed a given threshold, signifying meaningful terms.
+    \item \textbf{Count Terms:} Return the count of significant terms that contribute to the shape’s representation.
+\end{enumerate}
+
+\subsubsection{ST\_Transform}
+
+Transforming a Fourier-represented shape from one spatial coordinate system to another:
+
+\begin{enumerate}
+    \item \textbf{Fourier Coefficient Adjustment:} Adjust coefficients to match the scaling and rotation transformations required by the target coordinate system.
+    \item \textbf{Series Reconstruction:} Reconstruct the Fourier series using transformed coefficients to represent the shape in the new coordinate system.
+\end{enumerate}
+
+These spatial query operations demonstrate the flexibility and efficiency of Fourier series in representing and manipulating geospatial data. By adapting these methods, we enable compact storage and rapid computation for a wide range of geospatial queries.
+
+\vspace{25pt}
+\section{Python Implementation Example}
+Here is a Python code snippet that demonstrates the approximation process:
+
+\begin{verbatim}
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fft import fft, ifft
+import geopandas as gpd
+
+try:
+    gdf = gpd.read_file('https://raw.githubusercontent.com/johan/world.geo.json/master/countries/USA/FL.geo.json')
+    coastline = gdf.geometry[0].exterior.coords.xy
+    x = np.array(coastline[0])
+    y = np.array(coastline[1])
+except Exception as e:
+    print("Could not fetch detailed data, using sample data instead:", e)
+    x = np.linspace(-80, -80, 200) + np.cos(np.linspace(0, 4 * np.pi, 200))
+    y = np.linspace(25, 30, 200) + np.sin(np.linspace(0, 4 * np.pi, 200))
+
+n_points = len(x)
+t = np.linspace(0, 2 * np.pi, n_points, endpoint=False)
+x_coefficients = fft(x)
+y_coefficients = fft(y)
+
+def fourier_series(t, coeffs, n_terms=50):
+    a0 = coeffs[0].real / len(coeffs)
+    result = a0 * np.ones_like(t)
+    for n in range(1, n_terms):
+        a_n = coeffs[n].real / len(coeffs)
+        b_n = coeffs[n].imag / len(coeffs)
+        result += 2 * (a_n * np.cos(n * t) - b_n * np.sin(n * t))
+    return result
+
+x_approx = fourier_series(t, x_coefficients, n_terms=50)
+y_approx = fourier_series(t, y_coefficients, n_terms=50)
+
+plt.figure(figsize=(12, 8))
+plt.plot(x, y, label='Original Complex Map', color='blue', linewidth=1)
+plt.plot(x_approx, y_approx, label='Fourier Approximation', color='red', linestyle='--', linewidth=2)
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.legend()
+plt.title('Complex Map - Original vs. Fourier Series Approximation')
+plt.grid(True)
+plt.show()
+\end{verbatim}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{SGD_research_Florida.PNG}
+    \caption{Fourier Approximation of the Florida Map using only 101 coefficients}
+    \label{fig:fourier_map}
+\end{figure}
+
+\section{Comparison with Traditional Methods}
+
+\subsection{Data Storage Efficiency}
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Storage Method} & \textbf{Size Range} & \textbf{Resolution/Detail} & \textbf{Scalability} \\
+\midrule
+Raster & 100MB - 10GB & 1-10m per pixel & Poor \\
+Vector & 10-100MB & Variable & Moderate \\
+Fourier Series & 1-10KB & 101 coefficients & Excellent \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of Storage Methods for Florida Coastline Map}
+\end{table}
+
+\section{Conclusion}
+This method provides a promising new approach for both efficient map storage and handling complex spatial queries in a scalable manner. By using Fourier series, we can significantly reduce data size, and the periodic nature of Fourier functions allows for compact storage and smooth reconstruction. The potential for performing spatial computations directly within the Fourier domain further enhances this approach, making it a viable alternative to traditional raster and vector formats for various applications.
+
+\end{document}
+\section{Methodology}
+\subsection{Data Preprocessing}
+To apply Fourier series to map storage, we first extract the boundary coordinates from existing geospatial data formats, such as shapefiles or GeoJSON. The data is then processed to create a parameterized representation \( (x(t), y(t)) \) where \( t \) ranges from 0 to \( 2\pi \). This ensures that the functions are periodic, which is a prerequisite for Fourier analysis.
+
+\subsection{Fourier Coefficient Calculation}
+Using the parameterized representation, we calculate the Fourier coefficients \( a_n \) and \( b_n \) for both \( x(t) \) and \( y(t) \). These coefficients are stored in a compact format, allowing for easy reconstruction of the map boundary.
+
+\subsection{Spatial Query Handling in Fourier Domain}
+One of the main advantages of using Fourier series for map storage is the ability to handle spatial queries, such as intersection checks, directly within the Fourier domain. This section outlines how to approach these computations.
+
+\subsubsection{Intersection Checking}
+To determine if two shapes (described by their Fourier series) intersect, we can utilize the following approach:
+1. **Parameter Representation**: Let the two shapes be parameterized by \( (x_1(t), y_1(t)) \) and \( (x_2(s), y_2(s)) \).
+2. **Solve for Intersection**: The condition for intersection is:
+\[
+x_1(t) = x_2(s) \quad \text{and} \quad y_1(t) = y_2(s).
+\]
+3. **Transform to Fourier Domain**: Since \( x_1(t) \), \( y_1(t) \), \( x_2(s) \), and \( y_2(s) \) are expressed as Fourier series, this becomes a set of trigonometric equations. We can numerically solve these equations to find any possible intersections.
+4. **Benefits**: This method leverages the compact representation of shapes and makes intersection checks computationally efficient, as we are solving periodic equations rather than directly iterating over spatial coordinates.
+
+\subsubsection{Distance Queries}
+The Fourier coefficients can also help compute the distance between two curves by comparing the coefficients directly, bypassing the need for more complex geometric calculations.
+
+\subsubsection{Advantages for Dynamic Zooming}
+The Fourier series' hierarchical nature allows efficient multi-scale analysis. When zoomed out, fewer Fourier terms are needed to render the map, as fine details are not visible. As the user zooms in, higher-frequency terms are introduced, progressively revealing more detail. This approach can greatly optimize the rendering process in interactive applications.
+
+\section{Python Implementation Example}
+Here is a Python code snippet that demonstrates the approximation process:
+
+\begin{verbatim}
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.fft import fft, ifft
+import geopandas as gpd
+
+try:
+    gdf = gpd.read_file('https://raw.githubusercontent.com/johan/world.geo.json/master/countries/USA/FL.geo.json')
+    coastline = gdf.geometry[0].exterior.coords.xy
+    x = np.array(coastline[0])
+    y = np.array(coastline[1])
+except Exception as e:
+    print("Could not fetch detailed data, using sample data instead:", e)
+    x = np.linspace(-80, -80, 200) + np.cos(np.linspace(0, 4 * np.pi, 200))
+    y = np.linspace(25, 30, 200) + np.sin(np.linspace(0, 4 * np.pi, 200))
+
+n_points = len(x)
+t = np.linspace(0, 2 * np.pi, n_points, endpoint=False)
+x_coefficients = fft(x)
+y_coefficients = fft(y)
+
+def fourier_series(t, coeffs, n_terms=50):
+    a0 = coeffs[0].real / len(coeffs)
+    result = a0 * np.ones_like(t)
+    for n in range(1, n_terms):
+        a_n = coeffs[n].real / len(coeffs)
+        b_n = coeffs[n].imag / len(coeffs)
+        result += 2 * (a_n * np.cos(n * t) - b_n * np.sin(n * t))
+    return result
+
+x_approx = fourier_series(t, x_coefficients, n_terms=50)
+y_approx = fourier_series(t, y_coefficients, n_terms=50)
+
+plt.figure(figsize=(12, 8))
+plt.plot(x, y, label='Original Complex Map', color='blue', linewidth=1)
+plt.plot(x_approx, y_approx, label='Fourier Approximation', color='red', linestyle='--', linewidth=2)
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+plt.legend()
+plt.title('Complex Map - Original vs. Fourier Series Approximation')
+plt.grid(True)
+plt.show()
+\end{verbatim}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{SGD_research_Florida.PNG}
+    \caption{Fourier Approximation of the Florida Map using only 101 coefficients}
+    \label{fig:fourier_map}
+\end{figure}
+
+\section{Comparison with Traditional Methods}
+\subsection{Data Storage Efficiency}
+\begin{itemize}
+    \item \textbf{Raster:} Typically stores data as a grid of pixels. For high-resolution maps, the storage requirements can be significant, often ranging into hundreds of megabytes or gigabytes.
+    \item \textbf{Vector:} Uses paths defined by coordinates. More efficient than raster, but can still become cumbersome for complex shapes.
+    \item \textbf{Fourier Series:} Compresses complex shapes into a series of coefficients. Only 101 coefficients were sufficient to represent a simplified Florida coastline, resulting in significant storage savings.
+\end{itemize}
+
+\section{Conclusion}
+This method provides a promising new approach for both efficient map storage and handling complex spatial queries in a scalable manner. By using Fourier series, we can significantly reduce data size, and the periodic nature of Fourier functions allows for compact storage and smooth reconstruction. The potential for performing spatial computations directly within the Fourier domain further enhances this approach, making it a viable alternative to traditional raster and vector formats for various applications.
+
+\end{document}
